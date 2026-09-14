@@ -1,10 +1,10 @@
-import { App, subscribe, setScreen, setRoomState, clearSession, startPolling } from './state.js?v=4.2';
-import { fetchState } from './api.js?v=4.2';
-import { captureRects, playFlip } from './flip.js?v=4.2';
-import { renderHome, mountHome } from './screens/home.js?v=4.2';
-import { renderCreate, mountCreate } from './screens/create.js?v=4.2';
-import { renderJoin, mountJoin } from './screens/join.js?v=4.2';
-import { renderRoom, mountRoom } from './screens/room.js?v=4.2';
+import { App, subscribe, setScreen, setRoomState, clearSession, startPolling } from './state.js?v=5.0';
+import { fetchState } from './api.js?v=5.0';
+import { captureRects, playFlip } from './flip.js?v=5.0';
+import { renderHome, mountHome } from './screens/home.js?v=5.0';
+import { renderCreate, mountCreate } from './screens/create.js?v=5.0';
+import { renderJoin, mountJoin } from './screens/join.js?v=5.0';
+import { renderRoom, mountRoom } from './screens/room.js?v=5.0';
 
 const ROUTES = {
   home: { render: renderHome, mount: mountHome },

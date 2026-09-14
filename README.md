@@ -1,6 +1,10 @@
-## KIKI v4.1
+## KIKI V5
 
-Cache-fix release: HTML, JavaScript, and CSS assets are not browser-cached, preventing stale game UI after deployments. WhatsApp remains only for room sharing; gameplay uses KIKI room chat.
+V5 includes the large in-game chat, 51 per-user chat wallpapers, named rooms, dynamic scoreboard template, and improved SET/CLAIM and chat delivery reliability.
+
+## KIKI v5
+
+V5 release: 51 user-selectable chat wallpapers (chat area only), a KIKI scoreboard visual template, and cache-busted assets. Cache-fix: HTML, JavaScript, and CSS assets are not browser-cached, preventing stale game UI after deployments. WhatsApp remains only for room sharing; gameplay uses KIKI room chat.
 
 # KIKI — More games. More chaos.
 

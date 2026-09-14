@@ -2,6 +2,8 @@ const BASE = '/api/rooms';
 
 export const ERROR_MESSAGES = {
   NAME_REQUIRED: "Don't forget to add your name.",
+  ROOM_NAME_REQUIRED: 'Give your room a name.',
+  INVALID_CHAT_MESSAGE_ID: 'That chat message could not be sent. Try again.',
   INVALID_PLAYER_COUNT: 'Pick a player count between 3 and 10.',
   ROOM_NOT_FOUND: "Hmm… that room code doesn't look right.",
   ROOM_FULL: 'THE SQUAD IS COMPLETE 🔥 — this room is full.',
@@ -56,11 +58,11 @@ async function request(path, options) {
   return data;
 }
 
-export function createRoom(name, maxPlayers) {
+export function createRoom(name, maxPlayers, roomName) {
   return request(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, maxPlayers }),
+    body: JSON.stringify({ name, maxPlayers, roomName }),
   });
 }
 

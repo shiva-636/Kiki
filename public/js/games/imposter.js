@@ -1,8 +1,8 @@
-import { App, setLoading, setError, showToast } from '../state.js?v=4.2';
-import { sendAction } from '../api.js?v=4.2';
-import { on, escapeHtml } from '../dom.js?v=4.2';
-import { renderScoreboard } from './scoreboard.js?v=4.2';
-import { renderChat } from './chat.js?v=4.2';
+import { App, setLoading, setError, showToast } from '../state.js?v=5.0';
+import { sendAction } from '../api.js?v=5.0';
+import { on, escapeHtml } from '../dom.js?v=5.0';
+import { renderScoreboard } from './scoreboard.js?v=5.0';
+import { renderChat } from './chat.js?v=5.0';
 
 function ensureRoundUi(room) {
   if (App.ui.imposterRound !== room.round) {

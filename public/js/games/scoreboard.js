@@ -1,4 +1,4 @@
-import { escapeHtml } from '../dom.js?v=4.2';
+import { escapeHtml } from '../dom.js?v=5.0';
 
 export function renderScoreboard(room) {
   if (room.status !== 'in-game') return '';
@@ -11,26 +11,32 @@ export function renderScoreboard(room) {
     previousScore = score;
     previousRank = rank;
     const isYou = p.id === room.you?.id;
-    const medal = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    const medal = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
     return `
-      <div class="score-row" data-score-row style="display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:${isYou ? 'rgba(242,184,77,.12)' : 'rgba(255,255,255,.025)'};border:1px solid ${isYou ? 'rgba(242,184,77,.28)' : 'rgba(255,255,255,.06)'};">
-        <span style="font-family:var(--font-display);font-weight:700;color:${rank <= 3 ? 'var(--gold)' : 'var(--muted)'};">${medal || `#${rank}`}</span>
-        <span style="font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name)}${isYou ? ' <span style="color:var(--gold);font-size:11px;">YOU</span>' : ''}</span>
-        <span style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--gold);">${score}</span>
+      <div class="score-template-row ${isYou ? 'is-you' : ''}">
+        <span class="score-rank">${medal}</span>
+        <span class="score-player"><span class="score-player-dot">${escapeHtml((p.name || 'P').slice(0,1).toUpperCase())}</span>${escapeHtml(p.name)}${isYou ? '<small>YOU</small>' : ''}</span>
+        <span class="score-total">${score}</span>
       </div>
     `;
   }).join('');
 
+  const gameLabels = { imposter: 'IMPOSTER', truthOrDare: 'TRUTH OR DARE', guessWho: 'GUESS WHO?', threeSet: 'THREE SET' };
+  const gameLabel = gameLabels[room.currentGame] || 'KIKI';
   return `
-    <section aria-label="KIKI scoreboard" class="scoreboard-section">
-      <div class="scoreboard-header">
-        <div>
-          <p class="scoreboard-title">🏆 Scoreboard</p>
-          <p class="scoreboard-subtitle">Highest score ranks first</p>
+    <section aria-label="KIKI scoreboard" class="scoreboard-section score-template">
+      <div class="score-template-art" aria-hidden="true"></div>
+      <div class="score-template-overlay">
+        <div class="score-template-titlebar">
+          <div><strong>${gameLabel}</strong><span>SCORE BOARD</span></div>
+          <span class="score-template-round">ROUND ${room.round || 1}</span>
         </div>
-        <span class="scoreboard-count">${players.length} players</span>
+        <div class="score-template-table">
+          <div class="score-template-head"><span>#</span><span>Player</span><span>Total</span></div>
+          <div class="score-template-rows">${rows}</div>
+        </div>
+        <div class="score-template-footer">Same people. Different chaos. ♡</div>
       </div>
-      <div class="scoreboard-rows">${rows}</div>
     </section>
   `;
 }

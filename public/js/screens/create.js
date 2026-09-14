@@ -1,10 +1,11 @@
-import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=4.2';
-import { createRoom } from '../api.js?v=4.2';
-import { on, qs, escapeHtml } from '../dom.js?v=4.2';
+import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=5.0';
+import { createRoom } from '../api.js?v=5.0';
+import { on, qs, escapeHtml } from '../dom.js?v=5.0';
 
 export function renderCreate() {
   const count = App.ui.count || 5;
   const name = App.ui.name || '';
+  const roomName = App.ui.roomName || '';
   const counts = [3, 4, 5, 6, 7, 8, 9, 10];
   return `
     <div class="screen screen-form">
@@ -13,6 +14,11 @@ export function renderCreate() {
         <div class="form-kicker">KIKI ROOM</div>
         <h2>Create a room</h2>
         <p class="form-sub">Get everyone seated — then pick a game.</p>
+
+        <label class="field">
+          <span class="field-label">Room Name</span>
+          <input class="text-input" id="room-name-input" type="text" maxlength="40" placeholder="e.g. Friday Chaos" value="${escapeHtml(roomName)}" autocomplete="off" />
+        </label>
 
         <label class="field">
           <span class="field-label">Your name</span>
@@ -46,6 +52,13 @@ export function mountCreate(root) {
     setScreen('create', App.ui);
   });
 
+  const roomNameInput = qs('#room-name-input', root);
+  if (roomNameInput) {
+    roomNameInput.addEventListener('input', () => {
+      App.ui.roomName = roomNameInput.value;
+    });
+  }
+
   const nameInput = qs('#name-input', root);
   if (nameInput) {
     nameInput.focus();
@@ -59,14 +72,20 @@ export function mountCreate(root) {
 
   async function submit() {
     const name = (App.ui.name || '').trim();
+    const roomName = (App.ui.roomName || '').trim();
     const count = App.ui.count || 5;
+    if (!roomName) {
+      setError(new Error('Give your room a name.'));
+      qs('#room-name-input', root)?.focus();
+      return;
+    }
     if (!name) {
       setError(new Error("Don't forget to add your name."));
       return;
     }
     setLoading(true);
     try {
-      const res = await createRoom(name, count);
+      const res = await createRoom(name, count, roomName);
       setSession({ roomCode: res.roomCode, playerId: res.playerId, token: res.token, name });
       setRoomState(res.state);
       setLoading(false);

@@ -8,12 +8,13 @@ assert.equal(canStart('threeSet', 3), false);
 assert.equal(canStart('threeSet', 4), true);
 
 // Build a 5-player room.
-const { room, player: creator } = store.createRoom({ name: 'P1', maxPlayers: 5 });
+const { room, player: creator } = store.createRoom({ name: 'P1', roomName: 'Friday Chaos', maxPlayers: 5 });
 const players = [creator];
 for (let i = 2; i <= 5; i++) players.push(store.joinRoom(room, `P${i}`).player);
 
 // Imposter: private data differs only by session and no public assignments.
 startGame(room, 'imposter');
+assert.equal(room.roomName, 'Friday Chaos');
 assert.ok(privateGameView(room, players[0].id).word);
 assert.equal(Object.hasOwn(publicGameView(room), 'assignments'), false);
 assert.equal(publicGameView(room).lockedCount, 0);
@@ -73,10 +74,15 @@ assert.equal(performAction(ts, tsPlayers[1], 'call-set', {}).error, 'NOT_A_SET')
 console.log('KIKI smoke tests passed.');
 
 // Group chat is server-authoritative and shared by every player.
-const chatResult = performAction(ts, tsPlayers[1], 'send-chat', { text: 'Hello squad 👋' });
+const chatResult = performAction(ts, tsPlayers[1], 'send-chat', { text: 'Hello squad 👋', clientMessageId: 'client_msg_123' });
 assert.equal(chatResult.ok, true);
 assert.equal(ts.chat.at(-1).text, 'Hello squad 👋');
 assert.equal(ts.chat.at(-1).playerId, tsPlayers[1].id);
+const chatCountAfterFirstSend = ts.chat.length;
+const duplicateChatResult = performAction(ts, tsPlayers[1], 'send-chat', { text: 'Hello squad 👋', clientMessageId: 'client_msg_123' });
+assert.equal(duplicateChatResult.ok, true);
+assert.equal(duplicateChatResult.duplicate, true);
+assert.equal(ts.chat.length, chatCountAfterFirstSend);
 
 // Truth or Dare: only the selected player can choose, and the choice becomes a chat message.
 store.closeRoom(ts);

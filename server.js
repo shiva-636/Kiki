@@ -64,12 +64,14 @@ function serializeRoom(room, viewerPlayer) {
       seat: p.seat,
       isCoordinator: p.isCoordinator,
       score: p.score || 0,
+      roundScores: p.roundScores || {},
     }))
     .sort((a, b) => a.seat - b.seat);
 
   const payload = {
     roomCode: room.code,
     maxPlayers: room.maxPlayers,
+    roomName: room.roomName,
     status: room.currentGame ? 'in-game' : 'waiting',
     coordinatorId: room.coordinatorId,
     players,
@@ -109,12 +111,14 @@ async function handleApi(req, res, url) {
     if (parts.length === 2 && parts[1] === 'rooms' && req.method === 'POST') {
       const body = await readBody(req);
       const name = String(body.name || '').trim().slice(0, 20);
+      const roomName = String(body.roomName || '').trim().slice(0, 40);
       const maxPlayers = parseInt(body.maxPlayers, 10);
       if (!name) return send(res, 400, { error: 'NAME_REQUIRED' });
+      if (!roomName) return send(res, 400, { error: 'ROOM_NAME_REQUIRED' });
       if (!Number.isInteger(maxPlayers) || maxPlayers < 3 || maxPlayers > 10) {
         return send(res, 400, { error: 'INVALID_PLAYER_COUNT' });
       }
-      const { room, player } = store.createRoom({ name, maxPlayers });
+      const { room, player } = store.createRoom({ name, maxPlayers, roomName });
       return send(res, 200, {
         roomCode: room.code,
         playerId: player.id,
@@ -218,7 +222,8 @@ async function handleApi(req, res, url) {
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? '/index.html' : pathname;
   const filePath = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  const relativePath = path.relative(PUBLIC_DIR, filePath);
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     res.writeHead(403, securityHeaders({ 'Content-Type': 'text/plain; charset=utf-8' }));
     return res.end('Forbidden');
   }

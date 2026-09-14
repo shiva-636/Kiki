@@ -1,6 +1,6 @@
-import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=4.2';
-import { joinRoom } from '../api.js?v=4.2';
-import { on, qs, escapeHtml } from '../dom.js?v=4.2';
+import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=5.0';
+import { joinRoom } from '../api.js?v=5.0';
+import { on, qs, escapeHtml } from '../dom.js?v=5.0';
 
 export function renderJoin() {
   const name = App.ui.name || '';

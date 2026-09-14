@@ -1,11 +1,11 @@
-import { App, setScreen, setRoomState, clearSession, setError, setLoading, showToast, stopPolling } from '../state.js?v=4.2';
-import { selectGame, leaveRoom as apiLeaveRoom, closeGame as apiCloseGame } from '../api.js?v=4.2';
-import { on, escapeHtml, initials, avatarColor } from '../dom.js?v=4.2';
-import { getRoomImage, getSeatLayout } from '../seatLayouts.js?v=4.2';
-import { renderImposter, mountImposter } from '../games/imposter.js?v=4.2';
-import { renderWheelGame, mountWheelGame } from '../games/wheelGame.js?v=4.2';
-import { renderThreeSet, mountThreeSet } from '../games/threeSet.js?v=4.2';
-import { renderChat, mountChat } from '../games/chat.js?v=4.2';
+import { App, setScreen, setRoomState, clearSession, setError, setLoading, showToast, stopPolling } from '../state.js?v=5.0';
+import { selectGame, leaveRoom as apiLeaveRoom, closeGame as apiCloseGame } from '../api.js?v=5.0';
+import { on, escapeHtml, initials, avatarColor } from '../dom.js?v=5.0';
+import { getRoomImage, getSeatLayout } from '../seatLayouts.js?v=5.0';
+import { renderImposter, mountImposter } from '../games/imposter.js?v=5.0';
+import { renderWheelGame, mountWheelGame } from '../games/wheelGame.js?v=5.0';
+import { renderThreeSet, mountThreeSet } from '../games/threeSet.js?v=5.0';
+import { renderChat, mountChat } from '../games/chat.js?v=5.0';
 
 const GAMES = [
   { id: 'imposter', emoji: '🕵️', name: 'Imposter', min: 3 },
@@ -54,7 +54,7 @@ function renderSeats(room) {
 function renderWaitingPanel(room) {
   const filled = room.players.length;
   const isCoordinator = room.you?.isCoordinator;
-  const waText = encodeURIComponent(`Join my KIKI room! Code: ${room.roomCode} 🎉`);
+  const waText = encodeURIComponent(`Join my KIKI room “${room.roomName || 'KIKI Room'}”! Code: ${room.roomCode} 🎉`);
 
   return `
     <div class="waiting-panel">
@@ -102,7 +102,10 @@ export function renderRoom() {
   return `
     <div class="screen screen-room">
       <header class="room-topbar">
-        <span class="room-topbar-brand"><b>K</b>IKI</span>
+        <div class="room-topbar-room">
+          <span class="room-topbar-brand"><b>K</b>IKI</span>
+          <div class="room-topbar-name" title="${escapeHtml(room.roomName || 'KIKI Room')}">${escapeHtml(room.roomName || 'KIKI Room')}</div>
+        </div>
         <button class="room-code-pill" data-action="copy-code" type="button" title="Copy room code">${room.roomCode}</button>
         <div class="room-topbar-actions">
           ${room.you?.isCoordinator ? `<button class="btn-icon" data-action="close-game" aria-label="Close game" title="Close game">✕</button>` : ''}

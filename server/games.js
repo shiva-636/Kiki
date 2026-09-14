@@ -51,7 +51,11 @@ function assignImposterRound(room, active) {
 
 function addScore(room, playerId, points) {
   const target = store.findPlayer(room, playerId);
-  if (target) target.score = (target.score || 0) + points;
+  if (!target) return;
+  target.score = (target.score || 0) + points;
+  target.roundScores = target.roundScores || {};
+  const key = String(room.round || 1);
+  target.roundScores[key] = (target.roundScores[key] || 0) + points;
 }
 
 function imposterAction(room, player, action, payload) {
@@ -374,9 +378,16 @@ function chatAction(room, player, action, payload) {
   if (action !== 'send-chat') return null;
   const text = String(payload?.text || '').trim().slice(0, 300);
   if (!text) return { error: 'EMPTY_CHAT' };
-  store.addChat(room, text, false, player);
-  store.touch(room);
-  return { ok: true };
+
+  const clientMessageId = String(payload?.clientMessageId || '').trim().slice(0, 80);
+  if (clientMessageId && !/^[A-Za-z0-9_-]{8,80}$/.test(clientMessageId)) {
+    return { error: 'INVALID_CHAT_MESSAGE_ID' };
+  }
+
+  const before = room.chat.length;
+  const message = store.addChat(room, text, false, player, clientMessageId || null);
+  if (room.chat.length !== before) store.touch(room);
+  return { ok: true, messageId: message?.id || null, duplicate: room.chatClientIds?.get(`${player.id}:${clientMessageId}`) === message?.id };
 }
 
 /* ---------------------------------- dispatch ---------------------------------- */

@@ -656,3 +656,122 @@ body {
 .set-reaction-hint { margin: 12px 0 0; opacity: .7; font-size: 13px; }
 @keyframes kikiSetPop { from { transform: scale(.82); opacity: 0 } to { transform: scale(1); opacity: 1 } }
 @keyframes kikiSetPulse { from { transform: scale(1) } to { transform: scale(1.06) } }
+/* KIKI V5 chat wallpapers */
+.chat-section{position:relative;overflow:visible;isolation:isolate;background-image:linear-gradient(rgba(12,10,15,.62),rgba(12,10,15,.78)),var(--chat-wallpaper);background-size:cover;background-position:center;background-attachment:local}
+.chat-section::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(8,7,11,.22);pointer-events:none}
+.chat-header-actions{display:flex;align-items:center;gap:8px}.chat-wallpaper-button{border:1px solid rgba(255,255,255,.14);background:rgba(10,9,14,.58);color:var(--cream);border-radius:999px;padding:7px 10px;font-size:10px;font-weight:700;cursor:pointer;backdrop-filter:blur(10px)}
+.chat-wallpaper-popover{position:absolute;z-index:50;top:56px;right:12px;width:min(420px,calc(100vw - 52px));padding:12px;border:1px solid rgba(255,255,255,.13);border-radius:18px;background:rgba(18,15,23,.97);box-shadow:0 20px 50px rgba(0,0,0,.45);backdrop-filter:blur(18px)}
+.chat-wallpaper-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.chat-wallpaper-head strong{display:block;font-family:var(--font-display);font-size:16px}.chat-wallpaper-head small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.chat-wallpaper-close{width:34px;height:34px;font-size:12px}
+.chat-wallpaper-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;max-height:360px;overflow:auto;padding:2px}.chat-wallpaper-option{position:relative;aspect-ratio:9/16;padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;background:#17131b;cursor:pointer}.chat-wallpaper-option img{width:100%;height:100%;object-fit:cover}.chat-wallpaper-option span{position:absolute;right:4px;bottom:4px;min-width:18px;padding:2px 4px;border-radius:6px;background:rgba(0,0,0,.65);color:#fff;font-size:8px;font-weight:800}.chat-wallpaper-option.is-selected{border-color:var(--gold);box-shadow:0 0 0 1px rgba(242,184,77,.28),0 4px 14px rgba(242,184,77,.2)}
+/* KIKI V5 scoreboard template */
+.scoreboard-section.score-template{position:relative;min-height:470px;padding:0;overflow:hidden;border-radius:24px;border:1px solid rgba(255,255,255,.14);background:#151117;box-shadow:0 16px 42px rgba(0,0,0,.28)}.score-template-art{position:absolute;inset:0;background:url('/assets/scoreboard-template.png') center/cover no-repeat;filter:saturate(.96) brightness(.86)}.score-template-overlay{position:absolute;inset:0;padding:18px 14px 16px;display:flex;flex-direction:column}.score-template-titlebar{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:8px 10px 12px;color:#f6e9d6}.score-template-titlebar strong{display:block;font-family:var(--font-display);font-size:24px;letter-spacing:1px;text-shadow:0 2px 10px #000}.score-template-titlebar span:not(.score-template-round){display:block;font-size:10px;letter-spacing:3px;font-weight:800;opacity:.9}.score-template-round{font-size:10px;font-weight:800;letter-spacing:1.2px;padding:7px 9px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(0,0,0,.42)}
+.score-template-table{margin:28px 5% 0;border-radius:16px;overflow:hidden;background:rgba(16,14,19,.94);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 30px rgba(0,0,0,.35)}.score-template-head,.score-template-row{display:grid;grid-template-columns:42px 1fr 70px;align-items:center;gap:8px}.score-template-head{padding:10px 12px;color:#a89ea9;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.10)}.score-template-row{min-height:40px;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.07)}.score-template-row:last-child{border-bottom:0}.score-rank{color:#f2b84d;font-family:var(--font-display);font-weight:800}.score-player{min-width:0;display:flex;align-items:center;gap:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}.score-player-dot{width:24px;height:24px;flex:0 0 24px;border-radius:50%;display:grid;place-items:center;background:rgba(91,157,242,.9);color:#08111e;font-size:10px}.score-player small{margin-left:3px;color:#f2b84d;font-size:8px;letter-spacing:.7px}.score-total{text-align:right;color:#f2b84d;font-family:var(--font-display);font-size:18px;font-weight:800}.score-template-row.is-you{background:rgba(242,184,77,.09)}.score-template-footer{margin-top:auto;padding:12px 10px 2px;text-align:center;color:#ead6bf;font-family:var(--font-display);font-size:16px;text-shadow:0 2px 8px #000}
+@media(max-width:520px){.chat-header-actions{gap:5px}.chat-wallpaper-button{padding:6px 8px;font-size:9px}.chat-wallpaper-grid{grid-template-columns:repeat(4,1fr);max-height:330px}.scoreboard-section.score-template{min-height:430px}.score-template-table{margin-top:20px}}
+
+/* ============================ KIKI V5.1 reliability + chat pass ============================ */
+.room-topbar { display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px; }
+.room-topbar-room { min-width:0;display:flex;align-items:center;gap:10px; }
+.room-topbar-name { min-width:0;max-width:min(42vw,320px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cream);font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:-.02em; }
+.room-topbar-brand { flex:0 0 auto; }
+
+/* A large, app-like chat surface. The message list is the scroll region; the composer stays attached to its bottom. */
+.chat-section {
+  display:flex;
+  flex-direction:column;
+  min-height:clamp(500px,62dvh,720px);
+  padding:0;
+  border-radius:24px;
+  overflow:visible;
+  background-image:linear-gradient(rgba(12,10,15,.42),rgba(12,10,15,.66)),var(--chat-wallpaper);
+  background-size:cover;
+  background-position:center;
+}
+.chat-section::before { border-radius:inherit; }
+.chat-header {
+  flex:0 0 auto;
+  min-height:68px;
+  padding:14px 16px;
+  background:rgba(10,8,13,.62);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(14px);
+  border-radius:24px 24px 0 0;
+}
+.chat-title { font-size:20px; }
+.chat-subtitle { font-size:11px; }
+.chat-messages {
+  flex:1 1 auto;
+  min-height:280px;
+  max-height:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:18px 14px;
+  gap:9px;
+  scrollbar-width:thin;
+}
+.chat-message { max-width:min(82%,520px); }
+.chat-message-meta {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:0 8px 4px;
+  font-size:10px;
+}
+.chat-message-meta time { color:#756d7b;font-size:9px;font-weight:500;letter-spacing:0; }
+.chat-message.is-you .chat-message-meta { justify-content:flex-end; }
+.chat-message-bubble {
+  padding:10px 13px;
+  border-radius:16px 16px 16px 5px;
+  font-size:14px;
+  line-height:1.48;
+  box-shadow:0 5px 16px rgba(0,0,0,.12);
+}
+.chat-message.is-you .chat-message-bubble { border-radius:16px 16px 5px 16px; }
+.chat-composer {
+  flex:0 0 auto;
+  position:sticky;
+  bottom:0;
+  z-index:4;
+  grid-template-columns:minmax(0,1fr) auto;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(10,8,13,.72);
+  border-top:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(16px);
+  border-radius:0 0 24px 24px;
+}
+.chat-input { height:48px;border-radius:999px;padding-left:16px;padding-right:16px; }
+.chat-send { min-height:48px;border-radius:999px;padding:10px 20px; }
+.chat-empty { min-height:180px;display:grid;place-items:center; }
+.chat-wallpaper-popover { top:62px; }
+.chat-wallpaper-grid { grid-template-columns:repeat(6,1fr);max-height:400px; }
+.chat-wallpaper-option { aspect-ratio:1/1; }
+
+/* Keep the SET alert locked to the viewport and above every game surface. */
+.set-reaction-overlay {
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw;
+  height:100dvh;
+  min-height:100svh;
+  z-index:9999 !important;
+  touch-action:manipulation;
+  padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+}
+.set-reaction-card { max-height:calc(100dvh - 40px);overflow:auto; }
+
+/* Mobile: give the chat most of the available screen without making the composer tiny. */
+@media (max-width:520px) {
+  .room-topbar { grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding-left:10px;padding-right:10px; }
+  .room-topbar-room { gap:7px; }
+  .room-topbar-name { max-width:34vw;font-size:14px; }
+  .room-code-pill { padding:8px 10px;font-size:10px; }
+  .room-topbar .btn-icon { width:40px;height:40px; }
+  .chat-section { min-height:68dvh; }
+  .chat-header { min-height:64px;padding:12px; }
+  .chat-title { font-size:18px; }
+  .chat-messages { min-height:340px;padding:14px 10px; }
+  .chat-message { max-width:88%; }
+  .chat-message-bubble { font-size:14px; }
+  .chat-composer { grid-template-columns:minmax(0,1fr) auto;padding:8px 8px calc(8px + env(safe-area-inset-bottom)); }
+  .chat-send { width:auto;padding:10px 15px; }
+  .chat-wallpaper-grid { grid-template-columns:repeat(4,1fr);max-height:360px; }
+}

@@ -61,7 +61,7 @@ class RoomStore {
     room.version += 1;
   }
 
-  createRoom({ name, maxPlayers }) {
+  createRoom({ name, maxPlayers, roomName }) {
     const code = this.generateCode();
     const now = Date.now();
     const player = {
@@ -72,11 +72,14 @@ class RoomStore {
       isCoordinator: true,
       active: true,
       lastRank: 1,
+      score: 0,
+      roundScores: {},
       joinedAt: now,
     };
     const room = {
       code,
       maxPlayers,
+      roomName: String(roomName || 'KIKI Room').trim().slice(0, 40) || 'KIKI Room',
       createdAt: now,
       lastActivity: now,
       version: 1,
@@ -87,6 +90,7 @@ class RoomStore {
       log: [],
       chat: [],
       chatRound: 0,
+      chatClientIds: new Map(),
       coordinatorId: player.id,
     };
     this.addLog(room, `Room created. Waiting for the squad…`);
@@ -102,11 +106,20 @@ class RoomStore {
   resetRoundChat(room) {
     room.chat = [];
     room.chatRound = room.round;
+    room.chatClientIds = new Map();
   }
 
-  addChat(room, text, system = false, player = null) {
+  addChat(room, text, system = false, player = null, clientMessageId = null) {
     if (!Array.isArray(room.chat) || room.chatRound !== room.round) this.resetRoundChat(room);
-    room.chat.push({
+
+    const dedupeKey = !system && player && clientMessageId
+      ? `${player.id}:${clientMessageId}`
+      : null;
+    if (dedupeKey && room.chatClientIds?.has(dedupeKey)) {
+      return room.chat.find((m) => m.id === room.chatClientIds.get(dedupeKey)) || null;
+    }
+
+    const message = {
       id: `m_${crypto.randomBytes(8).toString('hex')}`,
       ts: Date.now(),
       round: room.round,
@@ -114,8 +127,23 @@ class RoomStore {
       system: Boolean(system),
       playerId: player?.id || null,
       playerName: player?.name || 'KIKI',
-    });
-    if (room.chat.length > 80) room.chat.splice(0, room.chat.length - 80);
+    };
+    room.chat.push(message);
+
+    if (dedupeKey) {
+      if (!room.chatClientIds) room.chatClientIds = new Map();
+      room.chatClientIds.set(dedupeKey, message.id);
+    }
+
+    while (room.chat.length > 80) {
+      const removed = room.chat.shift();
+      if (removed && room.chatClientIds) {
+        for (const [key, id] of room.chatClientIds) {
+          if (id === removed.id) room.chatClientIds.delete(key);
+        }
+      }
+    }
+    return message;
   }
 
   activePlayers(room) {
@@ -154,6 +182,8 @@ class RoomStore {
       isCoordinator: false,
       active: true,
       lastRank: active.length + 1,
+      score: 0,
+      roundScores: {},
       joinedAt: Date.now(),
     };
     room.players.push(player);
@@ -186,6 +216,7 @@ class RoomStore {
     room.log = [];
     room.chat = [];
     room.chatRound = 0;
+    room.chatClientIds = new Map();
     room.currentGame = null;
   }
 
