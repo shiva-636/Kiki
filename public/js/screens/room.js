@@ -1,11 +1,11 @@
-import { App, setScreen, setRoomState, clearSession, setError, setLoading, showToast, stopPolling } from '../state.js?v=5.0';
-import { selectGame, leaveRoom as apiLeaveRoom, closeGame as apiCloseGame } from '../api.js?v=5.0';
-import { on, escapeHtml, initials, avatarColor } from '../dom.js?v=5.0';
-import { getRoomImage, getSeatLayout } from '../seatLayouts.js?v=5.0';
-import { renderImposter, mountImposter } from '../games/imposter.js?v=5.0';
-import { renderWheelGame, mountWheelGame } from '../games/wheelGame.js?v=5.0';
-import { renderThreeSet, mountThreeSet } from '../games/threeSet.js?v=5.0';
-import { renderChat, mountChat } from '../games/chat.js?v=5.0';
+import { App, setScreen, setRoomState, clearSession, setError, setLoading, showToast, stopPolling } from '../state.js?v=5.1';
+import { selectGame, leaveRoom as apiLeaveRoom, closeGame as apiCloseGame } from '../api.js?v=5.1';
+import { on, escapeHtml, initials, avatarColor } from '../dom.js?v=5.1';
+import { getRoomImage, getSeatLayout } from '../seatLayouts.js?v=5.1';
+import { renderImposter, mountImposter } from '../games/imposter.js?v=5.1';
+import { renderWheelGame, mountWheelGame } from '../games/wheelGame.js?v=5.1';
+import { renderThreeSet, mountThreeSet } from '../games/threeSet.js?v=5.1';
+import { renderChat, mountChat } from '../games/chat.js?v=5.1';
 
 const GAMES = [
   { id: 'imposter', emoji: '🕵️', name: 'Imposter', min: 3 },

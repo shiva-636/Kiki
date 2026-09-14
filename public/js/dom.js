@@ -4,11 +4,20 @@ export function qs(sel, root = document) {
 export function qsa(sel, root = document) {
   return Array.from(root.querySelectorAll(sel));
 }
+export function clearDelegatedListeners(root) {
+  const listeners = root.__kikiDelegatedListeners;
+  if (!listeners) return;
+  for (const { evt, listener } of listeners) root.removeEventListener(evt, listener);
+  root.__kikiDelegatedListeners = [];
+}
+
 export function on(root, sel, evt, handler) {
-  root.addEventListener(evt, (e) => {
+  const listener = (e) => {
     const target = e.target.closest(sel);
     if (target && root.contains(target)) handler(e, target);
-  });
+  };
+  root.addEventListener(evt, listener);
+  (root.__kikiDelegatedListeners ||= []).push({ evt, listener });
 }
 export function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({

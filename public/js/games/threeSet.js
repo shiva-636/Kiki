@@ -1,8 +1,8 @@
-import { App, setLoading, setError, showToast } from '../state.js?v=5.0';
-import { sendAction } from '../api.js?v=5.0';
-import { on, escapeHtml, avatarColor, initials } from '../dom.js?v=5.0';
-import { renderScoreboard } from './scoreboard.js?v=5.0';
-import { renderChat } from './chat.js?v=5.0';
+import { App, setLoading, setError, showToast } from '../state.js?v=5.1';
+import { sendAction } from '../api.js?v=5.1';
+import { on, escapeHtml, avatarColor, initials } from '../dom.js?v=5.1';
+import { renderScoreboard } from './scoreboard.js?v=5.1';
+import { renderChat } from './chat.js?v=5.1';
 
 const CARD_EMOJI = {
   Lion: '🦁', Tiger: '🐯', Elephant: '🐘', Fox: '🦊', Wolf: '🐺',
@@ -74,13 +74,15 @@ export function renderThreeSet(room) {
 
   const lastSetName = room.players.find((p) => p.id === g.lastSetClaimerId)?.name || 'A player';
   const nextPosition = (g.finishOrder?.length || 0) + 1;
-  const hasPendingSetAlert = phase === 'playing' && (g.setAlertVersion || 0) > 0 && !g.finishOrder.includes(you?.id);
+  const alertVersion = g.setAlertVersion || 0;
+  const dismissedAlertVersion = Number(App.ui.dismissedSetAlertVersion || 0);
+  const hasPendingSetAlert = phase === 'playing' && alertVersion > dismissedAlertVersion && !g.finishOrder.includes(you?.id);
   const setAlertOverlay = hasPendingSetAlert ? `
     <div class="set-reaction-overlay" role="alert" aria-live="assertive">
       <div class="set-reaction-card">
         <div class="set-reaction-pulse">SET!</div>
         <div class="set-reaction-sub">${escapeHtml(lastSetName)} claimed #${g.finishOrder.length}. React now!</div>
-        <button class="btn btn-set btn-reaction" data-action="react-set" type="button">
+        <button class="btn btn-set btn-reaction" data-action="react-set" data-alert-version="${alertVersion}" type="button">
           SET! — GET #${nextPosition} 🃏
         </button>
         <p class="set-reaction-hint">Fastest valid reaction gets +${nextPosition === room.players.length ? 0 : Math.max(0, 100 - 10 * (nextPosition - 1))} points.</p>
@@ -178,16 +180,21 @@ export function mountThreeSet(root, ctx) {
   });
 
   on(root, '[data-action="react-set"]', 'click', async (e, target) => {
+    const alertVersionAtClick = Number(target.dataset.alertVersion || App.room?.game?.setAlertVersion || 0);
     target.disabled = true;
     target.textContent = 'CLAIMING…';
+    // Consume this alert for this player immediately. A failed reaction should
+    // never leave a modal stuck in CLAIMING; a newer SET alert will reopen it.
+    App.ui.dismissedSetAlertVersion = alertVersionAtClick;
     try {
       const result = await sendAction(session.roomCode, session.playerId, session.token, 'call-set', {});
       if (result?.result?.points !== undefined) {
         showToast(`SET claimed — #${result.result.position} · +${result.result.points} points! 🎉`);
       }
     } catch (err) {
+      const currentNextPosition = (App.room?.game?.finishOrder?.length || 0) + 1;
       target.disabled = false;
-      target.textContent = `SET! — GET #${nextPosition} 🃏`;
+      target.textContent = `SET! — GET #${currentNextPosition} 🃏`;
       setError(err);
     }
   });

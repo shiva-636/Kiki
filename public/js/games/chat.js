@@ -1,6 +1,6 @@
-import { App, setError } from '../state.js?v=5.0';
-import { sendAction } from '../api.js?v=5.0';
-import { on, escapeHtml } from '../dom.js?v=5.0';
+import { App, setError } from '../state.js?v=5.1';
+import { sendAction } from '../api.js?v=5.1';
+import { escapeHtml } from '../dom.js?v=5.1';
 
 const WALLPAPER_COUNT = 51;
 const DEFAULT_WALLPAPER = WALLPAPER_COUNT;
@@ -85,9 +85,19 @@ export function mountChat(root, ctx) {
   const { session, refresh } = ctx;
   const input = root.querySelector('[data-chat-input]');
   const box = root.querySelector('[data-chat-messages]');
+  const openButton = root.querySelector('[data-chat-wallpaper-open]');
+  const closeButton = root.querySelector('[data-chat-wallpaper-close]');
+  const picker = root.querySelector('[data-chat-wallpaper-picker]');
+  const form = root.querySelector('[data-chat-form]');
 
+  // IMPORTANT: attach listeners to the freshly-rendered chat controls directly.
+  // The app replaces root.innerHTML on every polling update. Delegating through
+  // root with a new listener on every render would stack handlers and, for the
+  // wallpaper toggle, one tap could open AND immediately close the picker.
   if (input) {
-    input.addEventListener('input', () => { App.ui.chatDraft = input.value.slice(0, CHAT_MAX_LENGTH); });
+    input.addEventListener('input', () => {
+      App.ui.chatDraft = input.value.slice(0, CHAT_MAX_LENGTH);
+    });
   }
 
   if (box) {
@@ -97,59 +107,71 @@ export function mountChat(root, ctx) {
     }, { passive: true });
   }
 
-  on(root, '[data-chat-wallpaper-open]', 'click', () => {
-    const picker = root.querySelector('[data-chat-wallpaper-picker]');
-    if (picker) picker.hidden = !picker.hidden;
-  });
+  if (openButton && picker) {
+    openButton.addEventListener('click', () => {
+      picker.hidden = false;
+    });
+  }
 
-  on(root, '[data-chat-wallpaper-close]', 'click', () => {
-    const picker = root.querySelector('[data-chat-wallpaper-picker]');
-    if (picker) picker.hidden = true;
-  });
+  if (closeButton && picker) {
+    closeButton.addEventListener('click', () => {
+      picker.hidden = true;
+    });
+  }
 
-  on(root, '[data-chat-wallpaper]', 'click', (e, target) => {
-    const id = Number.parseInt(target.dataset.chatWallpaper, 10);
-    if (!Number.isInteger(id) || id < 1 || id > WALLPAPER_COUNT) return;
-    localStorage.setItem(WALLPAPER_KEY, String(id));
-    App.ui.chatStickToBottom = true;
-    refresh();
-  });
-
-  on(root, '[data-chat-form]', 'submit', async (e) => {
-    e.preventDefault();
-    if (App.ui.chatSending) return;
-
-    const text = String(input?.value || App.ui.chatDraft || '').trim();
-    if (!text) return;
-
-    const clientMessageId = (globalThis.crypto?.randomUUID
-      ? globalThis.crypto.randomUUID().replaceAll('-', '')
-      : `${Date.now()}_${Math.random().toString(36).slice(2)}`);
-
-    App.ui.chatSending = true;
-    App.ui.chatClientMessageId = clientMessageId;
-    App.ui.chatDraft = text;
-    App.ui.chatStickToBottom = true;
-    refresh();
-
-    try {
-      await sendAction(session.roomCode, session.playerId, session.token, 'send-chat', {
-        text,
-        clientMessageId,
+  if (picker) {
+    picker.querySelectorAll('[data-chat-wallpaper]').forEach((target) => {
+      target.addEventListener('click', () => {
+        const id = Number.parseInt(target.dataset.chatWallpaper, 10);
+        if (!Number.isInteger(id) || id < 1 || id > WALLPAPER_COUNT) return;
+        try {
+          localStorage.setItem(WALLPAPER_KEY, String(id));
+        } catch {
+          // The current tab still gets the selected image on the next render.
+        }
+        App.ui.chatStickToBottom = true;
+        picker.hidden = true;
+        refresh();
       });
-      App.ui.chatSending = false;
-      App.ui.chatClientMessageId = null;
-      App.ui.chatDraft = '';
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (App.ui.chatSending) return;
+
+      const text = String(input?.value || App.ui.chatDraft || '').trim();
+      if (!text) return;
+
+      const clientMessageId = (globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID().replaceAll('-', '')
+        : `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
+      App.ui.chatSending = true;
+      App.ui.chatClientMessageId = clientMessageId;
+      App.ui.chatDraft = text;
+      App.ui.chatStickToBottom = true;
       refresh();
-    } catch (err) {
-      App.ui.chatSending = false;
-      App.ui.chatClientMessageId = null;
-      setError(err);
-    }
-  });
+
+      try {
+        await sendAction(session.roomCode, session.playerId, session.token, 'send-chat', {
+          text,
+          clientMessageId,
+        });
+        App.ui.chatSending = false;
+        App.ui.chatClientMessageId = null;
+        App.ui.chatDraft = '';
+        refresh();
+      } catch (err) {
+        App.ui.chatSending = false;
+        App.ui.chatClientMessageId = null;
+        setError(err);
+      }
+    });
+  }
 
   // Do not steal focus after every polling update.
-
   requestAnimationFrame(() => {
     const currentBox = root.querySelector('[data-chat-messages]');
     if (!currentBox) return;

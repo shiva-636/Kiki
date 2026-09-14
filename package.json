@@ -1,6 +1,6 @@
 {
   "name": "kiki",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "KIKI \u2014 More games. More chaos. A social party-game platform.",
   "type": "module",
   "main": "server.js",

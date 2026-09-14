@@ -1,4 +1,4 @@
-## KIKI V5
+## KIKI V5.1
 
 V5 includes the large in-game chat, 51 per-user chat wallpapers, named rooms, dynamic scoreboard template, and improved SET/CLAIM and chat delivery reliability.
 

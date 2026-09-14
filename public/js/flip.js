@@ -1,4 +1,4 @@
-import { prefersReducedMotion } from './dom.js?v=5.0';
+import { prefersReducedMotion } from './dom.js?v=5.1';
 
 /** Capture current bounding rects of elements matching selector, keyed by data-flip-id. */
 export function captureRects(selector) {

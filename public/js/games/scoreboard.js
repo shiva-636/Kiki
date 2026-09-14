@@ -1,4 +1,4 @@
-import { escapeHtml } from '../dom.js?v=5.0';
+import { escapeHtml } from '../dom.js?v=5.1';
 
 export function renderScoreboard(room) {
   if (room.status !== 'in-game') return '';

@@ -77,6 +77,22 @@ assert.match(ts.chat.at(-1).text, /called SET/);
 // A player without a SET cannot steal a finishing position.
 assert.equal(performAction(ts, tsPlayers[1], 'call-set', {}).error, 'NOT_A_SET');
 
+// Valid SET reactions must be awarded atomically in click/arrival order.
+for (const p of tsPlayers.slice(1)) {
+  ts.game.hands[p.id] = [
+    { id: `${p.id}_a`, name: 'Tiger' },
+    { id: `${p.id}_b`, name: 'Tiger' },
+    { id: `${p.id}_c`, name: 'Tiger' },
+  ];
+}
+for (let i = 1; i < tsPlayers.length; i++) {
+  const result = performAction(ts, tsPlayers[i], 'call-set', {});
+  assert.equal(result.ok, true);
+  assert.equal(result.position, i + 1);
+}
+assert.equal(ts.game.finishOrder.length, tsPlayers.length);
+assert.equal(ts.game.phase, 'round-complete');
+
 console.log('KIKI smoke tests passed.');
 
 // Group chat is server-authoritative and shared by every player.
