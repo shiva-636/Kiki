@@ -1,0 +1,191 @@
+import { App, setError } from '../state.js?v=6.0';
+import { sendAction } from '../api.js?v=6.0';
+import { escapeHtml } from '../dom.js?v=6.0';
+
+const WALLPAPER_COUNT = 51;
+const DEFAULT_WALLPAPER = WALLPAPER_COUNT;
+const WALLPAPER_KEY = 'kiki.chatWallpaper';
+const CHAT_MAX_LENGTH = 300;
+
+function getWallpaperId() {
+  const n = Number.parseInt(localStorage.getItem(WALLPAPER_KEY) || '', 10);
+  return Number.isInteger(n) && n >= 1 && n <= WALLPAPER_COUNT ? n : DEFAULT_WALLPAPER;
+}
+
+function wallpaperUrl(id) {
+  return `/assets/chat-wallpapers/chat-${String(id).padStart(2, '0')}.jpg`;
+}
+
+function renderWallpaperPicker() {
+  const selected = getWallpaperId();
+  const items = Array.from({ length: WALLPAPER_COUNT }, (_, i) => i + 1).map((id) => `
+    <button class="chat-wallpaper-option ${id === selected ? 'is-selected' : ''}" data-chat-wallpaper="${id}" type="button" aria-label="Chat wallpaper ${id}" aria-pressed="${id === selected}">
+      <img src="${wallpaperUrl(id)}" alt="" loading="lazy" />
+      <span>${id}</span>
+    </button>
+  `).join('');
+  return `
+    <div class="chat-wallpaper-popover" data-chat-wallpaper-picker hidden>
+      <div class="chat-wallpaper-head">
+        <div>
+          <strong>Chat wallpaper</strong>
+          <small>Only this chat area changes</small>
+        </div>
+        <button class="btn-icon chat-wallpaper-close" data-chat-wallpaper-close type="button" aria-label="Close wallpaper picker">✕</button>
+      </div>
+      <div class="chat-wallpaper-grid">${items}</div>
+    </div>
+  `;
+}
+
+export function renderChat(room) {
+  const rawMessages = Array.isArray(room.chat) ? room.chat.filter((m) => !m.round || m.round === room.round) : [];
+  const seenMessageIds = new Set();
+  const messages = rawMessages.filter((m) => {
+    const id = String(m.id || '');
+    if (!id || seenMessageIds.has(id)) return false;
+    seenMessageIds.add(id);
+    return true;
+  });
+  const you = room.you?.id;
+  const wallpaper = getWallpaperId();
+  const fullscreen = Boolean(App.ui.chatFullscreen);
+  return `
+    <section class="chat-section ${fullscreen ? 'is-fullscreen' : ''}" aria-label="${escapeHtml(room.roomName || 'KIKI Room')} chat" style="--chat-wallpaper:url('${wallpaperUrl(wallpaper)}')">
+      <div class="chat-header">
+        <div>
+          <p class="chat-title">💬 ${escapeHtml(room.roomName || 'KIKI Room')}</p>
+          <p class="chat-subtitle">Group chat · Private to this room · Round ${room.round}</p>
+        </div>
+        <div class="chat-header-actions">
+          <button class="chat-wallpaper-button" data-chat-wallpaper-open type="button" title="Change chat wallpaper">🖼️ Wallpaper</button>
+          <button class="chat-expand-button" data-chat-fullscreen type="button" aria-label="${fullscreen ? 'Minimize chat' : 'Expand chat'}" title="${fullscreen ? 'Minimize chat' : 'Expand chat'}">${fullscreen ? '↙' : '↗'}</button>
+          <span class="chat-live"><span></span> LIVE</span>
+        </div>
+      </div>
+      ${renderWallpaperPicker()}
+      <div class="chat-messages" data-chat-messages>
+        ${messages.length ? messages.map((m) => `
+          <div class="chat-message ${m.system ? 'is-system' : ''} ${m.playerId === you ? 'is-you' : ''}" data-message-id="${escapeHtml(m.id)}">
+            <div class="chat-message-meta">
+              <span>${escapeHtml(m.system ? 'KIKI' : (m.playerName || 'Player'))}</span>
+              <time datetime="${new Date(m.ts || Date.now()).toISOString()}">${new Date(m.ts || Date.now()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
+            </div>
+            <div class="chat-message-bubble">${escapeHtml(m.text)}</div>
+          </div>
+        `).join('') : `<p class="chat-empty">No messages yet. Start the chaos 👀</p>`}
+      </div>
+      <form class="chat-composer" data-chat-form>
+        <input class="text-input chat-input" data-chat-input maxlength="${CHAT_MAX_LENGTH}" autocomplete="off" placeholder="Type a message…" value="${escapeHtml(App.ui.chatDraft || '')}" aria-label="Chat message" />
+        <button class="btn btn-primary chat-send" type="submit">Send</button>
+      </form>
+    </section>
+  `;
+}
+
+export function mountChat(root, ctx) {
+  const { session, refresh } = ctx;
+  const input = root.querySelector('[data-chat-input]');
+  const box = root.querySelector('[data-chat-messages]');
+  const openButton = root.querySelector('[data-chat-wallpaper-open]');
+  const fullscreenButton = root.querySelector('[data-chat-fullscreen]');
+  const closeButton = root.querySelector('[data-chat-wallpaper-close]');
+  const picker = root.querySelector('[data-chat-wallpaper-picker]');
+  const form = root.querySelector('[data-chat-form]');
+
+  // IMPORTANT: attach listeners to the freshly-rendered chat controls directly.
+  // The app replaces root.innerHTML on every polling update. Delegating through
+  // root with a new listener on every render would stack handlers and, for the
+  // wallpaper toggle, one tap could open AND immediately close the picker.
+  if (input) {
+    input.addEventListener('input', () => {
+      App.ui.chatDraft = input.value.slice(0, CHAT_MAX_LENGTH);
+    });
+  }
+
+  if (box) {
+    box.addEventListener('scroll', () => {
+      const distance = box.scrollHeight - box.scrollTop - box.clientHeight;
+      App.ui.chatStickToBottom = distance < 40;
+    }, { passive: true });
+  }
+
+  if (openButton && picker) {
+    openButton.addEventListener('click', () => {
+      picker.hidden = false;
+    });
+  }
+
+  if (fullscreenButton) {
+    fullscreenButton.addEventListener('click', () => {
+      App.ui.chatFullscreen = !App.ui.chatFullscreen;
+      App.ui.chatStickToBottom = true;
+      refresh();
+    });
+  }
+
+  if (closeButton && picker) {
+    closeButton.addEventListener('click', () => {
+      picker.hidden = true;
+    });
+  }
+
+  if (picker) {
+    picker.querySelectorAll('[data-chat-wallpaper]').forEach((target) => {
+      target.addEventListener('click', () => {
+        const id = Number.parseInt(target.dataset.chatWallpaper, 10);
+        if (!Number.isInteger(id) || id < 1 || id > WALLPAPER_COUNT) return;
+        try {
+          localStorage.setItem(WALLPAPER_KEY, String(id));
+        } catch {
+          // The current tab still gets the selected image on the next render.
+        }
+        App.ui.chatStickToBottom = true;
+        picker.hidden = true;
+        refresh();
+      });
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (App.ui.chatSending) return;
+
+      const text = String(input?.value || App.ui.chatDraft || '').trim();
+      if (!text) return;
+
+      const clientMessageId = (globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID().replaceAll('-', '')
+        : `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
+      App.ui.chatSending = true;
+      App.ui.chatClientMessageId = clientMessageId;
+      App.ui.chatDraft = text;
+      App.ui.chatStickToBottom = true;
+      refresh();
+
+      try {
+        await sendAction(session.roomCode, session.playerId, session.token, 'send-chat', {
+          text,
+          clientMessageId,
+        });
+        App.ui.chatSending = false;
+        App.ui.chatClientMessageId = null;
+        App.ui.chatDraft = '';
+        refresh();
+      } catch (err) {
+        App.ui.chatSending = false;
+        App.ui.chatClientMessageId = null;
+        setError(err);
+      }
+    });
+  }
+
+  // Do not steal focus after every polling update.
+  requestAnimationFrame(() => {
+    const currentBox = root.querySelector('[data-chat-messages]');
+    if (!currentBox) return;
+    if (App.ui.chatStickToBottom !== false) currentBox.scrollTop = currentBox.scrollHeight;
+  });
+}
