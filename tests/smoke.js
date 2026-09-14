@@ -59,6 +59,12 @@ ts.game.hands[tsPlayers[0].id].push({ id: 'extra', name: 'Tiger' });
 ts.game.hands[tsPlayers[0].id][0] = { id: 'a', name: 'Lion' };
 ts.game.hands[tsPlayers[0].id][1] = { id: 'b', name: 'Lion' };
 ts.game.hands[tsPlayers[0].id][2] = { id: 'c', name: 'Lion' };
+// Make player 2 deterministic: no accidental SET from the randomized deal.
+ts.game.hands[tsPlayers[1].id] = [
+  { id: 'p2a', name: 'Tiger' },
+  { id: 'p2b', name: 'Lion' },
+  { id: 'p2c', name: 'Bear' },
+];
 const call = performAction(ts, tsPlayers[0], 'call-set', {});
 assert.equal(call.ok, true);
 assert.equal(call.points, 100);

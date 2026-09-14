@@ -148,9 +148,7 @@ export function mountChat(root, ctx) {
     }
   });
 
-  if (input && !sending && document.activeElement !== input) {
-    // Do not steal focus after every polling update.
-  }
+  // Do not steal focus after every polling update.
 
   requestAnimationFrame(() => {
     const currentBox = root.querySelector('[data-chat-messages]');
