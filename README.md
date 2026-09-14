@@ -1,3 +1,5 @@
+KIKI V7
+
 ## KIKI V5.1
 
 V5 includes the large in-game chat, 51 per-user chat wallpapers, named rooms, dynamic scoreboard template, and improved SET/CLAIM and chat delivery reliability.
@@ -68,3 +70,6 @@ For friends on the same Wi-Fi, use the host computer's local IP address.
 The current in-memory architecture is intentionally simple for small private game sessions. A server restart clears active rooms. A horizontally scaled deployment would require shared state such as Redis or a database.
 
 For a public deployment, place the app behind the hosting provider's HTTPS/reverse proxy. Consider adding IP-based rate limiting and centralized logging if KIKI becomes publicly accessible at scale.
+
+
+V7 assets: 50 Guess Who image assets are included under `public/assets/guess-who/`.

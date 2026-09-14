@@ -1,10 +1,10 @@
-import { App, subscribe, setScreen, setRoomState, clearSession, startPolling } from './state.js?v=6.0';
-import { fetchState } from './api.js?v=6.0';
-import { captureRects, playFlip } from './flip.js?v=6.0';
-import { renderHome, mountHome } from './screens/home.js?v=6.0';
-import { renderCreate, mountCreate } from './screens/create.js?v=6.0';
-import { renderJoin, mountJoin } from './screens/join.js?v=6.0';
-import { renderRoom, mountRoom } from './screens/room.js?v=6.0';
+import { App, subscribe, setScreen, setRoomState, clearSession, startPolling } from './state.js?v=7.0';
+import { fetchState } from './api.js?v=7.0';
+import { captureRects, playFlip } from './flip.js?v=7.0';
+import { renderHome, mountHome } from './screens/home.js?v=7.0';
+import { renderCreate, mountCreate } from './screens/create.js?v=7.0';
+import { renderJoin, mountJoin } from './screens/join.js?v=7.0';
+import { renderRoom, mountRoom } from './screens/room.js?v=7.0';
 
 const ROUTES = {
   home: { render: renderHome, mount: mountHome },
@@ -15,7 +15,7 @@ const ROUTES = {
 
 const rootEl = document.getElementById('app');
 
-import { clearDelegatedListeners } from './dom.js?v=6.0';
+import { clearDelegatedListeners } from './dom.js?v=7.0';
 
 function render() {
   const route = ROUTES[App.screen] || ROUTES.home;

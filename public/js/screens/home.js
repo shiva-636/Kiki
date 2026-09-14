@@ -1,5 +1,5 @@
-import { setScreen } from '../state.js?v=6.0';
-import { on } from '../dom.js?v=6.0';
+import { setScreen } from '../state.js?v=7.0';
+import { on } from '../dom.js?v=7.0';
 
 export function renderHome() {
   return `

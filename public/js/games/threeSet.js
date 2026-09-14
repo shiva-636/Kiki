@@ -1,8 +1,8 @@
-import { App, setLoading, setError, showToast } from '../state.js?v=6.0';
-import { sendAction } from '../api.js?v=6.0';
-import { on, escapeHtml, avatarColor, initials } from '../dom.js?v=6.0';
-import { renderScoreboard } from './scoreboard.js?v=6.0';
-import { renderChat } from './chat.js?v=6.0';
+import { App, setLoading, setError, showToast } from '../state.js?v=7.0';
+import { sendAction } from '../api.js?v=7.0';
+import { on, escapeHtml, avatarColor, initials } from '../dom.js?v=7.0';
+import { renderScoreboard } from './scoreboard.js?v=7.0';
+import { renderChat } from './chat.js?v=7.0';
 
 const CARD_EMOJI = {
   Lion: '🦁', Tiger: '🐯', Elephant: '🐘', Fox: '🦊', Wolf: '🐺',

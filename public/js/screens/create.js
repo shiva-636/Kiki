@@ -1,6 +1,6 @@
-import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=6.0';
-import { createRoom } from '../api.js?v=6.0';
-import { on, qs, escapeHtml } from '../dom.js?v=6.0';
+import { App, setScreen, setSession, setRoomState, setLoading, setError, startPolling } from '../state.js?v=7.0';
+import { createRoom } from '../api.js?v=7.0';
+import { on, qs, escapeHtml } from '../dom.js?v=7.0';
 
 export function renderCreate() {
   const count = App.ui.count || 5;

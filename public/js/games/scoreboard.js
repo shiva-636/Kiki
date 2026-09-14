@@ -1,4 +1,4 @@
-import { escapeHtml, avatarColor, initials } from '../dom.js?v=6.0';
+import { escapeHtml, avatarColor, initials } from '../dom.js?v=7.0';
 
 const SCORE_GAMES = new Set(['imposter', 'guessWho', 'threeSet']);
 

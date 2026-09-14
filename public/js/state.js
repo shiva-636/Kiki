@@ -1,4 +1,4 @@
-import { fetchState } from './api.js?v=6.0';
+import { fetchState } from './api.js?v=7.0';
 
 const SESSION_KEY = 'kiki_session_v1';
 const POLL_MS = 700;

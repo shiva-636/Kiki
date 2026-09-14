@@ -1,6 +1,6 @@
-import { App, setError } from '../state.js?v=6.0';
-import { sendAction } from '../api.js?v=6.0';
-import { escapeHtml } from '../dom.js?v=6.0';
+import { App, setError } from '../state.js?v=7.0';
+import { sendAction } from '../api.js?v=7.0';
+import { escapeHtml } from '../dom.js?v=7.0';
 
 const WALLPAPER_COUNT = 51;
 const DEFAULT_WALLPAPER = WALLPAPER_COUNT;
