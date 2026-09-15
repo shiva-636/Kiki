@@ -1,0 +1,222 @@
+import assert from 'node:assert/strict';
+import { store, secureShuffle } from '../server/store.js';
+import { canStart, startGame, performAction, privateGameView, publicGameView } from '../server/games.js';
+
+// Core range rules
+for (let n = 3; n <= 10; n++) assert.equal(canStart('imposter', n), true);
+assert.equal(canStart('threeSet', 3), false);
+assert.equal(canStart('threeSet', 4), true);
+
+// Build a 5-player room.
+const { room, player: creator } = store.createRoom({ name: 'P1', roomName: 'Friday Chaos', maxPlayers: 5 });
+const players = [creator];
+for (let i = 2; i <= 5; i++) players.push(store.joinRoom(room, `P${i}`).player);
+
+// Imposter: private data differs only by session and no public assignments.
+startGame(room, 'imposter');
+assert.equal(room.roomName, 'Friday Chaos');
+assert.ok(privateGameView(room, players[0].id).word);
+assert.equal(Object.hasOwn(publicGameView(room), 'assignments'), false);
+assert.equal(publicGameView(room).lockedCount, 0);
+
+// Every player locks their own private vote. Once all votes are locked,
+// correct non-imposters automatically receive +10 and the imposter gets 0.
+const imposterId = room.game.imposterId;
+for (const p of players) {
+  const target = p.id === imposterId ? players.find((x) => x.id !== p.id).id : imposterId;
+  const result = performAction(room, p, 'lock-vote', { targetPlayerId: target });
+  assert.equal(result.ok, true);
+}
+assert.equal(room.game.resultsRecorded, true);
+for (const p of players) {
+  assert.equal(p.score || 0, p.id === imposterId ? 0 : 10);
+  assert.equal(privateGameView(room, p.id).voteLocked, true);
+}
+assert.equal(publicGameView(room).imposterId, imposterId);
+assert.equal(performAction(room, creator, 'next-round', {}).ok, true);
+
+// Switching games resets the scoreboard instead of carrying points into the new game.
+assert.ok(players.some((p) => p.score === 10));
+startGame(room, 'guessWho');
+for (const p of players) assert.equal(p.score, 0);
+
+// Close/reset by making a fresh room for Three Set.
+store.closeRoom(room);
+const { room: ts } = store.createRoom({ name: 'P1', maxPlayers: 5 });
+const tsPlayers = [ts.players[0]];
+for (let i = 2; i <= 5; i++) tsPlayers.push(store.joinRoom(ts, `P${i}`).player);
+startGame(ts, 'threeSet');
+assert.equal(ts.game.phase, 'collecting-words');
+assert.equal(performAction(ts, tsPlayers[0], 'submit-set-word', { word: 'Shinchan' }).ok, true);
+assert.equal(performAction(ts, tsPlayers[1], 'submit-set-word', { word: 'Shinchan' }).error, 'WORD_ALREADY_TAKEN');
+assert.equal(performAction(ts, tsPlayers[1], 'submit-set-word', { word: 'Batman' }).ok, true);
+assert.equal(performAction(ts, tsPlayers[2], 'submit-set-word', { word: 'Iron Man' }).ok, true);
+assert.equal(performAction(ts, tsPlayers[3], 'submit-set-word', { word: 'Doraemon' }).ok, true);
+assert.equal(performAction(ts, tsPlayers[4], 'submit-set-word', { word: 'Spider-Man' }).ok, true);
+assert.deepEqual(ts.game.setWords, ['Shinchan', 'Batman', 'Iron Man', 'Doraemon', 'Spider-Man']);
+assert.equal(ts.game.phase, 'waiting-shuffle');
+const dealer = store.findPlayer(ts, ts.game.dealerId);
+assert.equal(performAction(ts, dealer, 'shuffle', {}).ok, true);
+const deckNames = ts.game.deck.map((c) => c.name);
+for (const word of ts.game.setWords) assert.equal(deckNames.filter((name) => name === word).length, 3);
+
+// Private hands are only returned for the requested player and public state has no card identities.
+const mine = privateGameView(ts, tsPlayers[0].id);
+assert.equal(mine.hand.length, 3);
+assert.equal(JSON.stringify(publicGameView(ts)).includes('Lion'), false);
+assert.equal(JSON.stringify(publicGameView(ts)).includes('Tiger'), false);
+
+// Leave is blocked during active games.
+assert.deepEqual(store.leaveRoom(ts, tsPlayers[1]), { error: 'GAME_IN_PROGRESS' });
+
+// Verify SET scoring formula: last finisher gets 0.
+// Give player 1 a triple inside a 4-card hand to test the previous bug.
+ts.game.hands[tsPlayers[0].id].push({ id: 'extra', name: 'Tiger' });
+ts.game.hands[tsPlayers[0].id][0] = { id: 'a', name: 'Lion' };
+ts.game.hands[tsPlayers[0].id][1] = { id: 'b', name: 'Lion' };
+ts.game.hands[tsPlayers[0].id][2] = { id: 'c', name: 'Lion' };
+// Make player 2 deterministic: no accidental SET from the randomized deal.
+ts.game.hands[tsPlayers[1].id] = [
+  { id: 'p2a', name: 'Tiger' },
+  { id: 'p2b', name: 'Lion' },
+  { id: 'p2c', name: 'Bear' },
+];
+const call = performAction(ts, tsPlayers[0], 'call-set', {});
+assert.equal(call.ok, true);
+assert.equal(call.points, 100);
+assert.equal(tsPlayers[0].score, 100);
+assert.equal(publicGameView(ts).finishOrder[0], tsPlayers[0].id);
+assert.equal(publicGameView(ts).setAlertVersion, 1);
+assert.equal(publicGameView(ts).lastSetClaimerId, tsPlayers[0].id);
+assert.match(ts.chat.at(-1).text, /SET position #1/);
+
+// A player without a SET cannot steal a finishing position.
+assert.equal(performAction(ts, tsPlayers[1], 'call-set', {}).error, 'NOT_A_SET');
+
+// Valid SET reactions must be awarded atomically in click/arrival order.
+for (const p of tsPlayers.slice(1)) {
+  ts.game.hands[p.id] = [
+    { id: `${p.id}_a`, name: 'Tiger' },
+    { id: `${p.id}_b`, name: 'Tiger' },
+    { id: `${p.id}_c`, name: 'Tiger' },
+  ];
+}
+for (let i = 1; i < tsPlayers.length; i++) {
+  const result = performAction(ts, tsPlayers[i], 'react-set', { alertVersion: ts.game.setAlertVersion });
+  assert.equal(result.ok, true);
+  assert.equal(result.position, i + 1);
+}
+assert.equal(ts.game.finishOrder.length, tsPlayers.length);
+assert.equal(ts.game.phase, 'round-complete');
+assert.equal(tsPlayers[tsPlayers.length - 1].score, 0);
+
+// Round 2 reuses the original Round 1 word set and does not collect new words.
+const originalSetWords = [...ts.game.setWords];
+assert.equal(performAction(ts, tsPlayers[0], 'next-round', {}).ok, true);
+assert.equal(ts.round, 2);
+assert.equal(ts.game.phase, 'waiting-shuffle');
+assert.deepEqual(ts.game.setWords, originalSetWords);
+assert.equal(ts.game.wordSuggestions, undefined);
+assert.equal(performAction(ts, tsPlayers[0], 'submit-set-word', { word: 'NewWord' }).error, 'WORD_ENTRY_CLOSED');
+
+// Voice chat signaling is room-scoped and only targets active participants.
+assert.equal(performAction(ts, tsPlayers[0], 'voice-state', { enabled: true }).ok, true);
+assert.equal(performAction(ts, tsPlayers[1], 'voice-state', { enabled: true }).ok, true);
+assert.equal(performAction(ts, tsPlayers[0], 'voice-signal', {
+  to: tsPlayers[1].id,
+  signal: { type: 'offer', description: { type: 'offer', sdp: 'test-sdp' } },
+}).ok, true);
+assert.equal(ts.voice.signals.at(-1).to, tsPlayers[1].id);
+assert.equal(publicGameView(ts) !== null, true);
+
+// Three Set scores also reset when switching to another game in the same room.
+assert.ok(tsPlayers.some((p) => p.score > 0));
+startGame(ts, 'guessWho');
+for (const p of tsPlayers) assert.equal(p.score, 0);
+
+console.log('KIKI smoke tests passed.');
+
+// Group chat is server-authoritative and shared by every player.
+const chatResult = performAction(ts, tsPlayers[1], 'send-chat', { text: 'Hello squad 👋', clientMessageId: 'client_msg_123' });
+assert.equal(chatResult.ok, true);
+assert.equal(ts.chat.at(-1).text, 'Hello squad 👋');
+assert.equal(ts.chat.at(-1).playerId, tsPlayers[1].id);
+const chatCountAfterFirstSend = ts.chat.length;
+const duplicateChatResult = performAction(ts, tsPlayers[1], 'send-chat', { text: 'Hello squad 👋', clientMessageId: 'client_msg_123' });
+assert.equal(duplicateChatResult.ok, true);
+assert.equal(duplicateChatResult.duplicate, true);
+assert.equal(ts.chat.length, chatCountAfterFirstSend);
+
+// Truth or Dare: only the selected player can choose, and the choice becomes a chat message.
+store.closeRoom(ts);
+const { room: tod } = store.createRoom({ name: 'A', maxPlayers: 3 });
+const todPlayers = [tod.players[0]];
+for (const name of ['B', 'C']) todPlayers.push(store.joinRoom(tod, name).player);
+startGame(tod, 'truthOrDare');
+assert.equal(performAction(tod, todPlayers[0], 'spin', {}).ok, true);
+const selectedTod = store.findPlayer(tod, tod.game.truthReceiverId);
+const askerTod = store.findPlayer(tod, tod.game.truthAskerId);
+assert.ok(selectedTod);
+assert.ok(askerTod);
+assert.notEqual(selectedTod.id, askerTod.id);
+assert.equal(tod.game.lastSelected, selectedTod.id);
+const wrongTod = todPlayers.find((p) => p.id !== selectedTod.id);
+assert.equal(performAction(tod, wrongTod, 'choose-truth-dare', { choice: 'truth' }).error, 'NOT_SELECTED_PLAYER');
+assert.equal(performAction(tod, selectedTod, 'choose-truth-dare', { choice: 'dare' }).ok, true);
+assert.equal(tod.game.chosenType, 'dare');
+assert.match(tod.chat.at(-1).text, /chose DARE/);
+assert.match(tod.chat.at(-1).text, /ask\/give it/);
+assert.equal(performAction(tod, todPlayers[0], 'spin', {}).ok, true);
+assert.notEqual(tod.game.truthReceiverId, tod.game.truthAskerId);
+
+// Guess Who: only the thinker can confirm they imagined someone, creating the opening chat message.
+store.closeRoom(tod);
+const { room: gw } = store.createRoom({ name: 'A', maxPlayers: 3 });
+const gwPlayers = [gw.players[0]];
+for (const name of ['B', 'C']) gwPlayers.push(store.joinRoom(gw, name).player);
+startGame(gw, 'guessWho');
+assert.equal(performAction(gw, gwPlayers[0], 'spin', {}).ok, true);
+const thinker = store.findPlayer(gw, gw.game.thinkerId);
+const nonThinker = gwPlayers.find((p) => p.id !== thinker.id);
+assert.equal(performAction(gw, nonThinker, 'confirm-thinker', {}).error, 'NOT_SELECTED_PLAYER');
+assert.equal(performAction(gw, thinker, 'confirm-thinker', {}).ok, true);
+assert.equal(gw.game.thinkerConfirmed, true);
+assert.match(gw.chat.at(-1).text, /has imagined someone/);
+assert.equal(performAction(gw, thinker, 'answer-question', { answer: 'yes' }).ok, true);
+assert.match(gw.chat.at(-1).text, /YES/);
+const oldGwChat = gw.chat.length;
+const correctGuesser = nonThinker;
+const gwResult = performAction(gw, thinker, 'record-correct', { correctPlayerIds: [correctGuesser.id] });
+assert.equal(gwResult.ok, true);
+assert.equal(correctGuesser.score, 10);
+assert.equal(performAction(gw, nonThinker, 'record-correct', { correctPlayerIds: [] }).error, 'NOT_SELECTED_PLAYER');
+assert.equal(performAction(gw, gwPlayers[0], 'spin', {}).ok, true);
+assert.equal(gw.round, 2);
+assert.equal(gw.chat.length, 0);
+
+// Truth or Dare: every new spin clears the previous spin's chat.
+const { room: tod2 } = store.createRoom({ name: 'A2', maxPlayers: 3 });
+const tod2Players = [tod2.players[0]];
+for (const name of ['B2', 'C2']) tod2Players.push(store.joinRoom(tod2, name).player);
+startGame(tod2, 'truthOrDare');
+assert.equal(performAction(tod2, tod2Players[0], 'spin', {}).ok, true);
+const firstTodChatRound = tod2.round;
+store.addChat(tod2, 'spin-specific message', false, tod2Players[0], 'tod_test_123');
+assert.ok(tod2.chat.length > 0);
+assert.equal(performAction(tod2, tod2Players[0], 'spin', {}).ok, true);
+assert.equal(tod2.round, firstTodChatRound);
+assert.equal(tod2.chat.length, 0);
+
+// Only the coordinator can advance a scored game.
+const gwNonCoordinator = gwPlayers.find((p) => !p.isCoordinator);
+assert.equal(performAction(gw, gwNonCoordinator, 'spin', {}).error, 'NOT_COORDINATOR');
+
+// Switching games keeps the same room and players.
+const roomCode = gw.code;
+const gwCoordinator = gwPlayers.find((p) => p.isCoordinator);
+assert.equal(performAction(gw, gwCoordinator, 'switch-game', { game: 'imposter' }).ok, true);
+assert.equal(gw.code, roomCode);
+assert.equal(gw.currentGame, 'imposter');
+assert.equal(gw.players.length, 3);
+
+console.log('KIKI chat tests passed.');

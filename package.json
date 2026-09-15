@@ -1,0 +1,15 @@
+{
+  "name": "kiki",
+  "version": "1.2.0",
+  "description": "KIKI \u2014 More games. More chaos. A social party-game platform.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
